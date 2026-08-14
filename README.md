@@ -96,10 +96,49 @@ python3 -m http.server 8000
 
 ## 4. GitHub Pages 배포
 
-1. 저장소에 푸시합니다. (`config.js` 는 `.gitignore` 에 있어 커밋되지 않습니다.)
-2. 배포용 `config.js` 를 별도로 포함시키거나, GitHub Actions 에서 시크릿으로 생성해 배포합니다.
-3. **Settings → Pages** 에서 브랜치를 선택해 게시합니다.
-4. Google API 키의 리퍼러 제한 목록과 Firebase 승인된 도메인에 게시 도메인을 추가합니다.
+`main` 브랜치에 푸시하면 [GitHub Actions 워크플로](.github/workflows/deploy.yml)가
+리포지토리 시크릿으로 `config.js` 를 생성해 Pages에 배포합니다.
+`config.js` 는 `.gitignore` 에 있어 저장소에는 커밋되지 않습니다.
+
+### 4.1 리포지토리 시크릿 등록
+
+**Settings → Secrets and variables → Actions → New repository secret** 에서 두 개를 등록합니다.
+
+| 시크릿 이름 | 값 |
+|---|---|
+| `GOOGLE_MAPS_API_KEY` | 발급받은 Maps JavaScript API 키 |
+| `FIREBASE_CONFIG` | Firebase `firebaseConfig` 객체를 **JSON** 으로 변환한 문자열 |
+
+`FIREBASE_CONFIG` 예시 (키 이름을 큰따옴표로 감싼 JSON 형식이어야 합니다):
+
+```json
+{
+  "apiKey": "...",
+  "authDomain": "your-project.firebaseapp.com",
+  "projectId": "your-project",
+  "storageBucket": "your-project.firebasestorage.app",
+  "messagingSenderId": "000000000000",
+  "appId": "1:000000000000:web:xxxxxxxx"
+}
+```
+
+`apiKey`, `authDomain`, `projectId`, `appId` 중 하나라도 빠지면 배포가 실패합니다.
+
+### 4.2 Pages 활성화
+
+**Settings → Pages → Build and deployment → Source** 를 **GitHub Actions** 로 설정합니다.
+(`Deploy from a branch` 가 아닙니다.)
+
+### 4.3 도메인 허용
+
+배포 주소 `https://<사용자명>.github.io/<저장소명>/` 을 두 곳에 등록합니다.
+
+- **Google Cloud Console** → API 키의 HTTP 리퍼러 제한에 `https://<사용자명>.github.io/*`
+- **Firebase 콘솔** → Authentication → Settings → 승인된 도메인에 `<사용자명>.github.io`
+
+> 배포된 `config.js` 는 브라우저에서 그대로 열람 가능합니다. Maps API 키는 원래 클라이언트에
+> 노출되는 값이고, Firebase 웹 API 키도 비밀이 아닙니다. 실제 보호는 **HTTP 리퍼러 제한**,
+> **승인된 도메인**, **Firestore 보안 규칙** 으로 이루어집니다.
 
 ## 설정 값 (`config.js`)
 
@@ -114,6 +153,9 @@ python3 -m http.server 8000
 
 ```
 voice-destination-finder/
+├── .github/
+│   ├── workflows/deploy.yml    main 푸시 시 GitHub Pages 배포
+│   └── scripts/make-config.js  시크릿으로 config.js 생성
 ├── index.html          로그인 / 음성 검색 / 목적지 관리 화면
 ├── style.css           상태별 컬러, 마이크 파동 애니메이션, 다크·라이트 대응
 ├── script.js           인증 · 목적지 CRUD · STT · 이름 매칭 · Places 검색 · 지도 · TTS
