@@ -1,0 +1,10 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 사용자는 자기 목적지만 읽고 쓸 수 있다.
+    match /users/{userId}/places/{placeId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
