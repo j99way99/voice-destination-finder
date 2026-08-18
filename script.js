@@ -730,7 +730,7 @@ function setPicked(entry) {
   el.pickedAddress.textContent = `${entry.name} · ${entry.address}`;
   el.pickedAddress.hidden = false;
   el.save.disabled = false;
-  if (!el.placeName.value.trim()) el.placeName.placeholder = `예: 딸내미집 (${entry.name})`;
+  if (!el.placeName.value.trim()) el.placeName.placeholder = `예: 우리집 (${entry.name})`;
 }
 
 async function runPlaceSearch() {
@@ -807,7 +807,7 @@ el.placeForm.addEventListener('submit', async (e) => {
   try {
     const { addDoc, serverTimestamp } = fb.api;
     await addDoc(placesCollection(), {
-      name,                          // 사용자가 붙인 이름 (예: 딸내미집)
+      name,                          // 사용자가 붙인 이름 (예: 우리집)
       mapName: pickedPlace.name,     // Google 지도상의 장소명
       address: pickedPlace.address,  // Google 지도상의 주소 (formattedAddress)
       lat: pickedPlace.lat,
@@ -816,7 +816,7 @@ el.placeForm.addEventListener('submit', async (e) => {
     });
     // 폼 초기화
     el.placeForm.reset();
-    el.placeName.placeholder = '예: 딸내미집';
+    el.placeName.placeholder = '예: 우리집';
     el.searchResults.innerHTML = '';
     el.searchResults.hidden = true;
     el.pickedAddress.hidden = true;
