@@ -369,6 +369,10 @@ body[data-state="working"] .mic { animation: breathe 1.2s ease-in-out infinite; 
 
 .confirm__actions { display: flex; gap: 8px; }
 
+.save-prompt { display: flex; flex-direction: column; gap: 10px; }
+.save-prompt__question { margin: 0; font-size: 14px; font-weight: 700; text-align: center; }
+.save-prompt__actions { display: flex; gap: 8px; }
+
 .btn {
   flex: 1;
   padding: 12px 14px;

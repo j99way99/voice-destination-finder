@@ -57,6 +57,10 @@ const el = {
   yes: $('yesBtn'),
   retry: $('retryBtn'),
   error: $('error'),
+  confirmActions: document.querySelector('.confirm__actions'),
+  savePrompt: $('savePrompt'),
+  saveAndCall: $('saveAndCallBtn'),
+  justCall: $('justCallBtn'),
 
   placeForm: $('placeForm'),
   placeName: $('placeName'),
@@ -644,6 +648,7 @@ function showCandidates(list) {
   // 후보가 하나뿐이면 최종 결과 카드와 내용이 겹치므로 목록을 숨긴다
   el.candidates.hidden = list.length < 2;
   el.confirm.hidden = false;
+  hideSavePrompt();
   selectCandidate(0);
   setState('confirm');
 }
@@ -678,12 +683,81 @@ function speak(text) {
   window.speechSynthesis.speak(utter);
 }
 
+// ─────────────────────────────────────────────────────────
+// 카카오T 호출 연동
+// ─────────────────────────────────────────────────────────
+function launchKakaoTaxi(entry) {
+  const params = new URLSearchParams({
+    type: 'taxi',
+    dest_lat: entry.lat,
+    dest_lng: entry.lng,
+  });
+  window.location.href = `https://t.kakao.com/launch?${params.toString()}`;
+}
+
+/** 발화로 찾은 신규 장소를 목적지로 저장한다. 이미 같은 이름이 있으면 건너뛴다. */
+async function saveCurrentAsPlace(entry) {
+  const duplicate = savedPlaces.some((p) => normalize(p.name) === normalize(entry.name));
+  if (duplicate) return;
+  const { addDoc, serverTimestamp } = fb.api;
+  await addDoc(placesCollection(), {
+    name: entry.name,
+    mapName: entry.name,
+    address: entry.address,
+    lat: entry.lat,
+    lng: entry.lng,
+    createdAt: serverTimestamp(),
+  });
+}
+
+function showSavePrompt() {
+  el.confirmActions.hidden = true;
+  el.savePrompt.hidden = false;
+}
+
+function hideSavePrompt() {
+  el.savePrompt.hidden = true;
+  el.confirmActions.hidden = false;
+  el.saveAndCall.disabled = false;
+  el.saveAndCall.textContent = '저장하고 호출';
+}
+
 function confirmDestination() {
   const entry = candidates[selectedIndex];
   if (!entry) return;
   setState('done');
   speak(`목적지 주소는 ${entry.address} 입니다.`);
+
+  // 이미 등록된 목적지는 다시 저장할 필요 없이 바로 호출한다.
+  if (entry.saved) {
+    launchKakaoTaxi(entry);
+    return;
+  }
+  showSavePrompt();
 }
+
+el.saveAndCall.addEventListener('click', async () => {
+  const entry = candidates[selectedIndex];
+  if (!entry) return;
+
+  el.saveAndCall.disabled = true;
+  el.justCall.disabled = true;
+  el.saveAndCall.textContent = '저장 중…';
+  try {
+    // 카카오T 로 넘어가면서 탭이 백그라운드로 밀리면 진행 중이던 저장 요청이
+    // 끊길 수 있어, 반드시 저장을 먼저 끝내고 나서 리다이렉트한다.
+    await saveCurrentAsPlace(entry);
+  } catch (err) {
+    console.error(err);
+    showMsg(el.error, '목적지 저장에 실패했습니다. 호출은 계속 진행합니다.');
+  }
+  launchKakaoTaxi(entry);
+});
+
+el.justCall.addEventListener('click', () => {
+  const entry = candidates[selectedIndex];
+  if (entry) launchKakaoTaxi(entry);
+});
 
 // ─────────────────────────────────────────────────────────
 // 모드 전환 / 화면 이동
@@ -697,6 +771,7 @@ function goToModePicker() {
   candidates = [];
   clearMarker();
   el.confirm.hidden = true;
+  hideSavePrompt();
   el.query.hidden = true;
   hideMsg(el.error);
   el.transcript.textContent = '— 아직 인식된 음성이 없습니다 —';
@@ -730,6 +805,7 @@ el.yes.addEventListener('click', confirmDestination);
 el.retry.addEventListener('click', () => {
   window.speechSynthesis && window.speechSynthesis.cancel();
   el.confirm.hidden = true;
+  hideSavePrompt();
   candidates = [];
   clearMarker();
   startListening();
