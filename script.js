@@ -736,7 +736,11 @@ function setPicked(entry) {
 async function runPlaceSearch() {
   const text = el.placeSearch.value.trim();
   hideMsg(el.placeError);
-  if (!text) return;
+  if (!text) {
+    showMsg(el.placeError, '검색어를 입력해주세요.');
+    el.placeSearch.focus();
+    return;
+  }
 
   if (!map) {
     await initMap();
