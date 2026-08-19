@@ -529,8 +529,18 @@ function startListening() {
   recognition.onerror = (event) => {
     clearTimeout(listenTimer);
     setState('error');
-    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+    if (event.error === 'not-allowed') {
       showMsg(el.error, '마이크 권한이 거부되었습니다. 브라우저 주소창의 권한 설정에서 마이크를 허용해주세요.');
+    } else if (event.error === 'service-not-allowed') {
+      // 사이트 마이크 권한과는 별개로, iOS는 OS 차원의 받아쓰기(Dictation) 서비스가
+      // 꺼져 있으면 이 오류를 낸다. "마이크 권한" 문구를 쓰면 이미 권한을 허용한
+      // 사용자가 원인을 못 찾고 헤매게 되어 안내를 분리했다.
+      showMsg(
+        el.error,
+        '음성 인식 서비스를 사용할 수 없습니다.\n' +
+          'iOS: 설정 → 일반 → 키보드 → 받아쓰기 활성화를 켜주세요. (Siri 설정과는 별개입니다)\n' +
+          '그 외 브라우저: 마이크 권한과 네트워크 연결을 확인해주세요.'
+      );
     } else if (event.error === 'no-speech') {
       showMsg(el.error, '음성이 감지되지 않았습니다. 마이크를 다시 누르고 또렷하게 말해주세요.');
     } else if (event.error === 'audio-capture') {
