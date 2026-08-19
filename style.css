@@ -435,6 +435,18 @@ body[data-state="working"] .mic { animation: breathe 1.2s ease-in-out infinite; 
 .saved__body { flex: 1; min-width: 0; }
 .saved__name { display: block; font-weight: 700; font-size: 14px; }
 .saved__addr { display: block; margin-top: 2px; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.saved__call {
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid var(--done);
+  border-radius: 8px;
+  color: var(--done);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 5px 10px;
+}
 .saved__del {
   flex: 0 0 auto;
   background: none;

@@ -267,13 +267,19 @@ function renderSavedList() {
     addr.textContent = place.address;
     body.append(name, addr);
 
+    const call = document.createElement('button');
+    call.type = 'button';
+    call.className = 'saved__call';
+    call.textContent = '호출';
+    call.addEventListener('click', () => launchKakaoTaxi(place));
+
     const del = document.createElement('button');
     del.type = 'button';
     del.className = 'saved__del';
     del.textContent = '삭제';
     del.addEventListener('click', () => removePlace(place));
 
-    li.append(body, del);
+    li.append(body, call, del);
     el.savedList.appendChild(li);
   });
 }
