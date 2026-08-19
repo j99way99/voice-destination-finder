@@ -431,6 +431,29 @@ function similarity(a, b) {
 }
 
 /**
+ * Places 검색 결과를 발화 텍스트와의 유사도 순으로 재정렬한다.
+ *
+ * Google Places Text Search 의 기본 순위는 관련도·평점 등 자체 기준을 따르는데,
+ * 한국 지하철 출구처럼 이름이 지저분한 POI(예: "봉은사역3번출구·삼성1파출소")가
+ * 실제로 더 정확한 후보(예: "삼성역7번출구")보다 앞에 오는 경우가 있다.
+ * 이름 앞부분(역명)이 발화와 일치할수록 가산점을 줘 역명이 다른 후보끼리의
+ * 동점을 갈라준다.
+ */
+function rankByQuerySimilarity(list, spokenQuery) {
+  const q = normalize(spokenQuery);
+  const prefixBonus = (name) => {
+    const n = normalize(name);
+    let k = 0;
+    while (k < Math.min(q.length, n.length, 3) && q[k] === n[k]) k++;
+    return (k / 3) * 0.15;
+  };
+  return [...list]
+    .map((entry) => ({ entry, score: similarity(q, normalize(entry.name)) + prefixBonus(entry.name) }))
+    .sort((a, b) => b.score - a.score)
+    .map((r) => r.entry);
+}
+
+/**
  * 발화에서 저장된 목적지를 찾는다.
  * 완전 일치 → 포함 관계 → 유사도 순으로 점수를 매겨 정렬한다.
  */
@@ -579,7 +602,7 @@ async function handleTranscript(text) {
       showMsg(el.error, `"${spoken}" 에 해당하는 장소를 찾지 못했습니다. 다시 말씀해주세요.`);
       return;
     }
-    showCandidates(found);
+    showCandidates(rankByQuerySimilarity(found, spoken));
   } catch (err) {
     console.error(err);
     setState('error');
